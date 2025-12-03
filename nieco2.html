@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<title>Interaktívny psík</title>
+<style>
+  body {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #eef;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  #button {
+    position: relative;
+    padding: 20px 40px;
+    font-size: 18px;
+    cursor: pointer;
+  }
+
+  #dog {
+    position: absolute;
+    width: 150px;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  #tail {
+    position: absolute;
+    width: 50px;
+    bottom: 20px;
+    left: 50%;
+    transform-origin: left center;
+    animation: wag 1s infinite linear;
+  }
+
+  @keyframes wag {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(30deg); }
+    100% { transform: rotate(0deg); }
+  }
+
+  .eye {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: black;
+    border-radius: 50%;
+    top: 30px;
+  }
+
+  #eye-left { left: 40px; }
+  #eye-right { left: 90px; }
+</style>
+</head>
+<body>
+
+<button id="button">Klikni ma</button>
+
+<div id="dog">
+  <img id="dog-img" src="dog_body.png" width="150">
+  <img id="tail" src="dog_tail.png">
+  <div id="eye-left" class="eye"></div>
+  <div id="eye-right" class="eye"></div>
+</div>
+
+<script>
+const tail = document.getElementById('tail');
+const dog = document.getElementById('dog');
+const button = document.getElementById('button');
+const eyes = [document.getElementById('eye-left'), document.getElementById('eye-right')];
+
+document.addEventListener('mousemove', e => {
+  const dogRect = dog.getBoundingClientRect();
+  const dogCenter = { x: dogRect.left + dogRect.width / 2, y: dogRect.top + dogRect.height / 2 };
+
+  // Otáčanie očí smerom k kurzoru
+  eyes.forEach(eye => {
+    const eyeRect = eye.getBoundingClientRect();
+    const eyeCenter = { x: eyeRect.left + eyeRect.width/2, y: eyeRect.top + eyeRect.height/2 };
+    const angle = Math.atan2(e.clientY - eyeCenter.y, e.clientX - eyeCenter.x);
+    eye.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
+  });
+
+  // Výpočet vzdialenosti od tlačidla
+  const buttonRect = button.getBoundingClientRect();
+  const buttonCenter = { x: buttonRect.left + buttonRect.width/2, y: buttonRect.top + buttonRect.height/2 };
+  const dx = e.clientX - buttonCenter.x;
+  const dy = e.clientY - buttonCenter.y;
+  const distance = Math.sqrt(dx*dx + dy*dy);
+
+  // Čím bližšie k tlačidlu, tým rýchlejšie vrtí chvost
+  const maxDistance = 500;
+  let speed = 0.1 + (1 - Math.min(distance / maxDistance, 1)) * 0.9; // 0.1s až 1s
+  tail.style.animationDuration = `${1 / speed}s`;
+});
+</script>
+</body>
+</html>

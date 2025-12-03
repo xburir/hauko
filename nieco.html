@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plynulý unikajúci kurzor</title>
+<style>
+  body {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 50px;
+    background-color: #f0f0f0;
+    cursor: none; /* skryje reálny kurzor */
+    position: relative;
+  }
+
+  button {
+    padding: 20px 40px;
+    font-size: 24px;
+    user-select: none;
+    position: relative;
+    cursor: none; /* skryje natívny kurzor aj nad tlačidlom */
+  z-index: 1;   /* tlačidlo pod fake kurzorom */
+  }
+
+  #fakeCursor {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    position: absolute;
+    background-image: url('cursor.png');
+    background-size: 100% 100%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    z-index: 10; /* nad všetkým */
+  }
+
+  #nie {
+  pointer-events: none;  /* nikdy neklikateľné */
+  filter: brightness(1); /* žiadny hover efekt */
+  cursor: none;          /* nezobrazí sa kurzor ani pri hoveri */
+}
+
+</style>
+</head>
+<body>
+
+<button id="ano">ANO</button>
+<button id="nie">NIE</button>
+<div id="fakeCursor"></div>
+
+<script>
+const fakeCursor = document.getElementById('fakeCursor');
+const nieBtn = document.getElementById('nie');
+
+let mouseX = 0;
+let mouseY = 0;
+let cursorX = 0;
+let cursorY = 0;
+
+document.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+function animate() {
+  const rect = nieBtn.getBoundingClientRect();
+  const btnX = rect.left + rect.width / 2;
+  const btnY = rect.top + rect.height / 2;
+
+  let targetX = mouseX;
+  let targetY = mouseY;
+
+  const offsetX = mouseX - btnX;
+  const offsetY = mouseY - btnY;
+  const distance = Math.sqrt(offsetX**2 + offsetY**2);
+  const safeDistance = 100; // vzdialenosť, pri ktorej kurzor začne unikať
+  const pushDistance = 100; // o koľko sa má kurzor odsunúť
+
+  if (distance < safeDistance) {
+    const angle = Math.atan2(offsetY, offsetX); targetX = mouseX + Math.cos(angle) * (safeDistance - distance); targetY = mouseY + Math.sin(angle) * (safeDistance - distance);
+  }
+
+  // plynulý pohyb falošného kurzora
+  cursorX += (targetX - cursorX) * 0.2;
+  cursorY += (targetY - cursorY) * 0.2;
+
+  fakeCursor.style.left = cursorX + 'px';
+  fakeCursor.style.top = cursorY + 'px';
+
+  requestAnimationFrame(animate);
+}
+
+// keď myš opustí celé okno
+document.addEventListener("mouseleave", () => {
+    fakeCursor.style.display = "none";
+});
+
+// keď sa myš vráti do okna
+document.addEventListener("mouseenter", () => {
+    fakeCursor.style.display = "block";
+});
+
+// keď okno stratí fokus (prepneš kartu, alt+tab...)
+window.addEventListener("blur", () => {
+    fakeCursor.style.display = "none";
+});
+
+// keď okno získa fokus späť
+window.addEventListener("focus", () => {
+    fakeCursor.style.display = "block";
+});
+
+
+animate();
+</script>
+
+</body>
+</html>
