@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Otázočka</title>
+<style>
+  :root {
+    --bg: #fff4f6;
+    --ink: #2a2a2a;
+    --pink: #ff5c8a;
+    --pink-dark: #e04374;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    background: var(--bg);
+    font-family: "Segoe UI", system-ui, sans-serif;
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 16px;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  h1 {
+    font-size: clamp(24px, 6vw, 40px);
+    text-align: center;
+    margin: 0;
+  }
+
+  #bubble {
+    background: #fff;
+    border: 3px solid var(--ink);
+    border-radius: 18px;
+    padding: 8px 16px;
+    font-size: 18px;
+    font-weight: 600;
+    position: relative;
+    min-height: 46px;
+    transition: transform 0.2s;
+  }
+  #bubble::after {
+    content: "";
+    position: absolute;
+    bottom: -12px;
+    left: 60%;
+    border: 10px solid transparent;
+    border-top-color: var(--ink);
+    border-bottom: 0;
+  }
+
+  #dogWrap {
+    position: relative;
+    width: min(460px, 92vw);
+  }
+  #dogSvg { width: 100%; height: auto; display: block; overflow: visible; }
+
+  #buttonRow {
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    justify-content: center;
+    min-height: 90px;
+  }
+
+  button {
+    font: inherit;
+    font-size: 22px;
+    font-weight: 700;
+    padding: 14px 38px;
+    border-radius: 999px;
+    border: 3px solid var(--ink);
+    cursor: pointer;
+  }
+
+  #ano {
+    background: var(--pink);
+    color: #fff;
+    transition: transform 0.25s, background 0.2s;
+  }
+  #ano:hover { background: var(--pink-dark); }
+
+  #nieSlot { position: relative; }
+  #nie {
+    background: #fff;
+    color: var(--ink);
+    transition: left 0.25s ease-out, top 0.25s ease-out;
+  }
+  #nie.fled { position: fixed; z-index: 5; margin: 0; }
+
+  #hint {
+    font-size: 16px;
+    min-height: 22px;
+    opacity: 0.75;
+    text-align: center;
+  }
+
+  .heart {
+    position: fixed;
+    pointer-events: none;
+    font-size: 22px;
+    animation: floatUp 1.6s ease-out forwards;
+    z-index: 20;
+  }
+  @keyframes floatUp {
+    from { transform: translate(-50%, 0) scale(0.6); opacity: 1; }
+    to   { transform: translate(calc(-50% + var(--dx)), -120px) scale(1.2); opacity: 0; }
+  }
+
+  body.done #buttonRow, body.done #hint { display: none; }
+</style>
+</head>
+<body>
+
+<h1 id="question">Pôjdeš so mnou na rande?</h1>
+
+<div id="bubble">Hmm? 🐶</div>
+
+<div id="dogWrap">
+  <svg id="dogSvg" viewBox="0 0 500 215" aria-label="psík">
+    <g stroke="#3b2416" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- shadow -->
+      <ellipse id="shadow" cx="230" cy="198" rx="170" ry="8" fill="rgba(59,36,22,0.12)" stroke="none"/>
+
+      <g id="dog">
+        <!-- tail (pivot 84,98): hnedý chvost s obrysom -->
+        <g id="tail">
+          <path d="M84,98 C76,80 72,62 78,44 C80,38 86,36 88,41" fill="none" stroke-width="11"/>
+          <path d="M84,98 C76,80 72,62 78,44 C80,38 86,36 88,41" fill="none" stroke="#d4874a" stroke-width="4.5"/>
+          <g id="wagLines" stroke-width="3">
+            <path d="M58,40 Q54,48 58,56" fill="none"/>
+            <path d="M48,34 Q42,46 48,58" fill="none"/>
+            <path d="M100,40 Q104,48 100,56" fill="none"/>
+          </g>
+        </g>
+
+        <!-- back legs (behind) -->
+        <rect x="74"  y="128" width="22" height="62" rx="11" fill="#a8622f"/>
+        <rect x="300" y="128" width="22" height="62" rx="11" fill="#a8622f"/>
+
+        <!-- body + svetlejšie bruško -->
+        <path d="M95,88 Q220,72 345,84 Q374,92 370,122 Q364,150 330,150 Q220,158 100,150 Q66,146 66,118 Q66,92 95,88 Z"
+              fill="#d4874a"/>
+        <path d="M100,137 Q220,146 345,134 Q340,148 330,149 Q220,156 102,149 Q86,146 80,138 Z" fill="#eab07c" stroke="none"/>
+        <path d="M95,88 Q220,72 345,84 Q374,92 370,122 Q364,150 330,150 Q220,158 100,150 Q66,146 66,118 Q66,92 95,88 Z"
+              fill="none"/>
+
+        <!-- front legs + labky -->
+        <rect x="96"  y="132" width="22" height="60" rx="11" fill="#c7783e"/>
+        <rect x="326" y="132" width="22" height="60" rx="11" fill="#c7783e"/>
+        <path d="M99,184 Q107,178 115,184" fill="none" stroke="#eab07c" stroke-width="5"/>
+        <path d="M329,184 Q337,178 345,184" fill="none" stroke="#eab07c" stroke-width="5"/>
+
+        <!-- obojok so srdiečkom -->
+        <path d="M350,80 C362,94 366,110 360,128" fill="none" stroke="#e23b5a" stroke-width="10"/>
+        <g id="tag">
+          <path d="M364,130 C364,126 358,124 357,129 C356,124 350,126 350,130 C350,135 357,139 357,141 C357,139 364,135 364,130 Z"
+                fill="#ffc93c" stroke-width="2.5"/>
+        </g>
+
+        <!-- head (pivot 360,95) -->
+        <g id="head">
+          <path d="M362,72 C360,44 380,32 400,32 C420,32 430,44 436,56 C452,62 468,70 470,82 C471,96 456,102 440,102 L400,102 C376,102 363,92 362,72 Z"
+                fill="#d4874a" stroke="none"/>
+          <!-- svetlejší ňufáčik -->
+          <path d="M430,58 C450,63 468,71 470,82 C471,96 456,102 440,102 L414,102 C424,90 424,70 430,58 Z" fill="#eab07c" stroke="none"/>
+          <path d="M362,72 C360,44 380,32 400,32 C420,32 430,44 436,56 C452,62 468,70 470,82 C471,96 456,102 440,102 L400,102 C376,102 363,92 362,72 Z"
+                fill="none"/>
+          <ellipse cx="466" cy="78" rx="8" ry="6.5" fill="#3b2416"/>
+          <circle cx="468" cy="75.5" r="2" fill="#fff" stroke="none" opacity="0.7"/>
+
+          <ellipse id="blush" cx="430" cy="82" rx="8" ry="4.5" fill="#ff7f9a" stroke="none" opacity="0"/>
+
+          <!-- eye: dot + sparkle, and happy ^ variant -->
+          <g id="eyeDot">
+            <ellipse id="eyeBall" cx="418" cy="60" rx="4.5" ry="5.5" fill="#3b2416" stroke="none"/>
+            <circle id="eyeShine" cx="419.5" cy="58" r="1.6" fill="#fff" stroke="none"/>
+          </g>
+          <path id="eyeHappy" d="M410,63 Q418,52 426,63" fill="none" opacity="0"/>
+          <path id="brow" d="M410,48 Q418,46 426,48" fill="none" stroke-width="3"/>
+
+          <!-- tear -->
+          <path id="tear" d="M414,68 Q410,76 414,79 Q418,76 414,68 Z" fill="#8ac8ee" stroke="#4a90c0" stroke-width="1.5" opacity="0"/>
+
+          <!-- mouth: čiarka (zatvorené) alebo otvorený úsmev s jazykom -->
+          <g id="mouthOpen" opacity="0">
+            <path d="M435,89 Q447,106 459,87 Q447,94 435,89 Z" fill="#6b2030" stroke-width="3"/>
+            <path id="tongue" d="M442,95 Q441,112 448,112 Q455,112 454,95 Z" fill="#ff7a90" stroke-width="3"/>
+            <path d="M448,99 L448,106" stroke="#e0556f" stroke-width="2"/>
+          </g>
+          <path id="mouth" d="M436,92 Q447,92 458,92" fill="none" stroke-width="3"/>
+
+          <!-- ear (pivot 384,40) -->
+          <path id="ear" d="M384,38 C366,36 352,56 352,80 C352,104 362,120 374,118 C386,116 392,96 392,70 C392,54 392,42 384,38 Z"
+                fill="#8a4a22"/>
+        </g>
+      </g>
+    </g>
+  </svg>
+</div>
+
+<div id="buttonRow">
+  <button id="ano">Áno</button>
+  <span id="nieSlot"><button id="nie" tabindex="-1">Nie</button></span>
+</div>
+
+<div id="hint"></div>
+
+<script>
+// ===== Texty =====
+// Načítavajú sa z texty.json. Tieto hodnoty sú len záloha, keby sa súbor nepodarilo načítať
+// (napr. pri otvorení stránky dvojklikom – prehliadač vtedy nedovolí čítať iné súbory).
+const TEXTS = {
+  question: "Pôjdeš so mnou na rande?",
+  done: "Juchúúú! Vedel som to! ❤️",
+  bubbleHappy: ["Áno áno áno! 😍", "Ešte kúsok! 🥰", "Hav hav! 💕"],
+  bubbleNeutral: ["Hmm? 🐶"],
+  bubbleSad: ["Nie... naozaj? 🥺", "Psík je smutný 😢"],
+  bubbleDone: "Najlepší deň! 🐾💖",
+  hints: [
+    "Ups, ušlo to 😏",
+    "Skús ešte raz…",
+    "Psík plače 😢",
+    "Tlačidlo „Nie“ je dnes na dovolenke 🏖️",
+    "Však vieš, ktoré je to správne 😉",
+  ],
+};
+
+const $ = (id) => document.getElementById(id);
+const anoBtn = $("ano"), nieBtn = $("nie"), nieSlot = $("nieSlot");
+const bubble = $("bubble"), hint = $("hint");
+const el = {
+  dog: $("dog"), tail: $("tail"), wagLines: $("wagLines"), head: $("head"), ear: $("ear"),
+  eyeDot: $("eyeDot"), eyeBall: $("eyeBall"), eyeShine: $("eyeShine"), eyeHappy: $("eyeHappy"),
+  brow: $("brow"), tear: $("tear"), mouth: $("mouth"), mouthOpen: $("mouthOpen"), tongue: $("tongue"),
+  blush: $("blush"), tag: $("tag"),
+  shadow: $("shadow"),
+};
+
+$("question").textContent = TEXTS.question || "";
+
+fetch("texty.json", { cache: "no-store" })
+  .then((r) => r.json())
+  .then((data) => {
+    Object.assign(TEXTS, data);
+    $("question").textContent = done ? (TEXTS.done || "") : (TEXTS.question || "");
+    if (done) setText(bubble, TEXTS.bubbleDone);
+    bubbleKey = ""; // prekresli bublinu s novými textami
+  })
+  .catch(() => console.warn("texty.json sa nepodarilo načítať – používam predvolené texty"));
+
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+// bezpečný výber z textov: prázdny zoznam / chýbajúca hodnota = nič sa nezobrazí
+const pick = (list, i) => (Array.isArray(list) && list.length ? list[(i ?? Math.floor(Math.random() * list.length)) % list.length] : "") ?? "";
+const setText = (node, text) => {
+  node.textContent = text || "";
+  if (node === bubble) bubble.style.visibility = text ? "visible" : "hidden";
+};
+const lerp = (a, b, t) => a + (b - a) * clamp(t, 0, 1);
+
+// ===== Pointer =====
+let px = null, py = null;
+function onPointer(e) { px = e.clientX; py = e.clientY; }
+window.addEventListener("pointermove", onPointer);
+window.addEventListener("pointerdown", onPointer);
+
+// ===== Utekajúce "Nie" =====
+let dodges = 0, lastDodge = 0, sadBoost = 0, done = false;
+
+// slot drží miesto v rade, aby sa "Áno" neposúvalo
+const r0 = nieBtn.getBoundingClientRect();
+nieSlot.style.width = r0.width + "px";
+nieSlot.style.height = r0.height + "px";
+
+function rectDist(x, y, r) {
+  const dx = Math.max(r.left - x, 0, x - r.right);
+  const dy = Math.max(r.top - y, 0, y - r.bottom);
+  return Math.hypot(dx, dy);
+}
+
+function dodge() {
+  const now = performance.now();
+  if (now - lastDodge < 200 || done) return;
+  lastDodge = now;
+
+  const r = nieBtn.getBoundingClientRect();
+  const a = anoBtn.getBoundingClientRect();
+  const m = 16;
+  const maxX = window.innerWidth - r.width - m;
+  const maxY = window.innerHeight - r.height - m;
+  const fromX = px ?? r.left + r.width / 2, fromY = py ?? r.top + r.height / 2;
+
+  let best = null, bestScore = -Infinity;
+  for (let i = 0; i < 40; i++) {
+    const x = m + Math.random() * Math.max(0, maxX - m);
+    const y = m + Math.random() * Math.max(0, maxY - m);
+    const cand = { left: x - 20, top: y - 20, right: x + r.width + 20, bottom: y + r.height + 20 };
+    const overlapsAno = !(cand.right < a.left || cand.left > a.right || cand.bottom < a.top || cand.top > a.bottom);
+    if (overlapsAno) continue;
+    const d = Math.hypot(x + r.width / 2 - fromX, y + r.height / 2 - fromY);
+    // ďaleko od prsta, ale nie úplne na kraji obrazovky
+    const score = Math.min(d, 320) + Math.random() * 40;
+    if (score > bestScore) { bestScore = score; best = { x, y }; }
+  }
+  if (!best) return;
+
+  if (!nieBtn.classList.contains("fled")) {
+    nieBtn.style.left = r.left + "px";
+    nieBtn.style.top = r.top + "px";
+    nieBtn.classList.add("fled");
+    nieBtn.getBoundingClientRect(); // aby transition začala zo starej pozície
+  }
+  nieBtn.style.left = best.x + "px";
+  nieBtn.style.top = best.y + "px";
+
+  dodges++;
+  sadBoost = 1;
+  setText(hint, pick(TEXTS.hints, dodges - 1));
+  anoBtn.style.transform = `scale(${Math.min(1 + dodges * 0.08, 1.6)})`;
+}
+
+nieBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); dodge(); });
+nieBtn.addEventListener("click", (e) => { e.preventDefault(); dodge(); });
+nieBtn.addEventListener("focus", () => nieBtn.blur());
+
+window.addEventListener("resize", () => {
+  if (!nieBtn.classList.contains("fled")) return;
+  const r = nieBtn.getBoundingClientRect();
+  nieBtn.style.left = clamp(r.left, 16, window.innerWidth - r.width - 16) + "px";
+  nieBtn.style.top = clamp(r.top, 16, window.innerHeight - r.height - 16) + "px";
+});
+
+// ===== Srdiečka =====
+function spawnHeart(x, y, spread = 60) {
+  const h = document.createElement("div");
+  h.className = "heart";
+  h.textContent = ["❤️", "💕", "💖", "💗"][Math.floor(Math.random() * 4)];
+  h.style.left = x + (Math.random() - 0.5) * spread + "px";
+  h.style.top = y + "px";
+  h.style.setProperty("--dx", (Math.random() - 0.5) * 80 + "px");
+  document.body.appendChild(h);
+  h.addEventListener("animationend", () => h.remove());
+}
+
+function headScreenPos() {
+  const svg = $("dogSvg").getBoundingClientRect();
+  return { x: svg.left + svg.width * (410 / 500), y: svg.top + svg.height * (30 / 215) };
+}
+
+anoBtn.addEventListener("click", () => {
+  if (done) return;
+  done = true;
+  document.body.classList.add("done");
+  $("question").textContent = TEXTS.done || "";
+  setText(bubble, TEXTS.bubbleDone);
+  for (let i = 0; i < 40; i++) {
+    setTimeout(() => spawnHeart(Math.random() * window.innerWidth, window.innerHeight * (0.3 + Math.random() * 0.6), 0), i * 60);
+  }
+});
+
+// ===== Nálada psíka =====
+let mood = 0, phase = 0, last = performance.now(), heartTimer = 0, bubbleKey = "";
+
+function targetMood() {
+  if (done) return 1;
+  let m = 0;
+  if (px !== null) {
+    const a = anoBtn.getBoundingClientRect(), n = nieBtn.getBoundingClientRect();
+    const dA = rectDist(px, py, a), dN = rectDist(px, py, n);
+    m = clamp(((dN - dA) / (dN + dA + 1)) * 1.6, -1, 1);
+  }
+  return Math.min(m, 1 - sadBoost * 2); // po úteku "Nie" je psík chvíľu smutný
+}
+
+function pickBubble(m) {
+  const key = done ? "done" : m > 0.45 ? "happy" : m < -0.45 ? "sad" : "neutral";
+  if (key === bubbleKey) return;
+  bubbleKey = key;
+  if (key === "done") return;
+  const list = key === "happy" ? TEXTS.bubbleHappy : key === "sad" ? TEXTS.bubbleSad : TEXTS.bubbleNeutral;
+  setText(bubble, pick(list));
+}
+
+function frame(now) {
+  const dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+
+  // proximita k "Nie" -> utekaj
+  if (px !== null && !done && rectDist(px, py, nieBtn.getBoundingClientRect()) < 45) dodge();
+
+  sadBoost = Math.max(0, sadBoost - dt * 0.6);
+  mood += (targetMood() - mood) * Math.min(1, dt * 6);
+  const happy = clamp(mood, 0, 1), sad = clamp(-mood, 0, 1);
+  const t = (mood + 1) / 2;
+
+  // chvost: rýchlosť a rozsah rastú s radosťou, pri smútku ovisne
+  phase += lerp(0.6, 9, t) * dt * Math.PI * 2;
+  const tailAngle = lerp(-20, -110, sad) + lerp(0, 10, happy) * -1 + Math.sin(phase) * lerp(8, 32, happy) * (1 - sad * 0.9);
+  el.tail.setAttribute("transform", `rotate(${tailAngle} 84 98)`);
+  el.wagLines.setAttribute("opacity", clamp((happy - 0.3) / 0.5, 0, 1));
+
+  // poskakovanie
+  const bounce = happy > 0.6 ? Math.abs(Math.sin(phase / 2)) * 8 * (happy - 0.6) / 0.4 : 0;
+  el.dog.setAttribute("transform", `translate(0 ${-bounce + sad * 4})`);
+  el.shadow.setAttribute("rx", 170 - bounce * 2);
+
+  // hlava a ucho
+  const headAngle = lerp(0, 12, sad) - lerp(0, 5, happy) + Math.sin(phase / 2) * 2 * happy;
+  el.head.setAttribute("transform", `rotate(${headAngle} 360 95)`);
+  const earAngle = lerp(0, 6, sad) - happy * 12 + Math.sin(phase) * 8 * happy;
+  el.ear.setAttribute("transform", `rotate(${earAngle} 384 40)`);
+
+  // oči
+  const happyEye = clamp((happy - 0.65) / 0.25, 0, 1);
+  el.eyeHappy.setAttribute("opacity", happyEye);
+  el.eyeDot.setAttribute("opacity", 1 - happyEye);
+  el.eyeBall.setAttribute("ry", lerp(5.5, 3.6, sad) + happy * 1.2);
+  el.eyeBall.setAttribute("rx", 4.5 + happy * 1);
+  el.eyeShine.setAttribute("r", 1.6 + happy * 0.8 + sad * 0.6);
+
+  // obočie: smutné = predný koniec hore, šťastné = zdvihnutý oblúk
+  const b1 = lerp(48, 52, sad) - happy * 3, b2 = lerp(48, 40, sad) - happy * 3, bc = 46 - happy * 6 + sad * 2;
+  el.brow.setAttribute("d", `M410,${b1} Q418,${bc} 426,${b2}`);
+  el.brow.setAttribute("opacity", clamp(Math.abs(mood) * 1.5, 0.15, 1));
+
+  // ústa a jazyk: keď sa otvorí papuľka s jazykom, čiarka úst zmizne
+  el.mouth.setAttribute("d", `M436,92 Q447,${92 + mood * 10} 458,${92 - happy * 2 + sad * 2}`);
+  const openOp = happy > 0.5 ? 1 : 0;
+  el.mouthOpen.setAttribute("opacity", openOp);
+  el.mouth.setAttribute("opacity", 1 - openOp);
+  el.tongue.setAttribute("transform", `rotate(${Math.sin(phase * 0.8) * 6 * happy} 448 95)`);
+  el.blush.setAttribute("opacity", happy * 0.8);
+
+  // srdiečko na obojku sa hojdá
+  el.tag.setAttribute("transform", `rotate(${Math.sin(phase) * 12 * happy} 357 126)`);
+
+  // slzička
+  const tearOn = clamp((sad - 0.6) / 0.3, 0, 1);
+  const fall = (now / 1000 * 18) % 22;
+  el.tear.setAttribute("opacity", tearOn * (1 - fall / 22));
+  el.tear.setAttribute("transform", `translate(0 ${fall})`);
+
+  // srdiečka pri veľkej radosti
+  heartTimer -= dt;
+  if (happy > 0.75 && heartTimer <= 0) {
+    const p = headScreenPos();
+    spawnHeart(p.x, p.y);
+    heartTimer = done ? 0.15 : 0.45;
+  }
+
+  bubble.style.transform = `scale(${1 + happy * 0.08}) rotate(${Math.sin(phase / 2) * 2 * happy}deg)`;
+  pickBubble(mood);
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+
+</body>
+</html>
