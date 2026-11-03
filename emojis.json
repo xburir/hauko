@@ -1,0 +1,8 @@
+{
+  "_info": "Temy emoji. Kazda tema je len zoznam smajlikov, nijako nesuvisi s psikom. Ktora tema sa kde pouzije, sa vybera v scenari v priklady/ (cast \"emoji\") menom temy; tam sa da napisat aj zoznam priamo. Nova tema = novy kluc.",
+  "love": ["❤️", "💕", "💖", "💗", "😍", "🥰", "😘", "💘"],
+  "sad":  ["😢", "😭", "🥺", "💧", "💔", "😞"],
+  "flex": ["💪", "🔥", "🎉", "🥳", "👏", "🏆", "😎", "🏋️"],
+  "cold": ["🥶", "❄️", "🧊", "☃️", "🌊", "💙", "🏊"],
+  "beer": ["🍺", "🍻", "🥨", "🍕", "🥳", "🎉"]
+}

@@ -1,0 +1,39 @@
+{
+  "_info": "Scenar otuzovanie. Zapne sa v scenar.json: \"scenar\": \"otuzovanie\". Obrazky v obrazky/otuzovanie/ su zastupne - nahrad ich vlastnymi.",
+
+  "texty": {
+    "question": "Ideš so mnou v sobotu otužovať? 🥶",
+    "ano": "Idem!",
+    "nie": "Je mi zima",
+    "done": "Legenda! Voda má 4 °C 🧊",
+    "bubbleHappy": ["To je ono! 💪", "Studená voda, teplé srdce 💙", "Otužilec! 🏊"],
+    "bubbleNeutral": ["Tak čo, odvážiš sa? 🤔"],
+    "bubbleSad": ["Zima je len v hlave 🥺", "Ani na minútku? 😢"],
+    "bubbleDone": "Sobota 9:00 pri jazere 🌊",
+    "hints": [
+      "Ups, ušlo to 😏",
+      "Aj „Nie“ sa bojí studenej vody 🥶",
+      "Tlačidlo „Nie“ zamrzlo… a ušlo 🧊",
+      "Však vieš, ktoré je to správne 😉"
+    ]
+  },
+
+  "emoji": {
+    "_info": "Hodnota = nazov temy z emojis.json (\"cold\") ALEBO priamo zoznam ([\"🥶\", \"💪\"]). \"\" = nic nevyleti.",
+    "_ano": "tema z emojis.json",
+    "ano": "cold",
+    "_priAno": "zoznam priamo tu (nemusi byt v emojis.json)",
+    "priAno": ["🥶", "💪", "🌊", "💙"],
+    "priNie": "sad",
+    "poAno": "flex"
+  },
+
+  "obrazky": {
+    "_info": "Vlastne obrazky namiesto psika. Vsetko prazdne = nakresleny psik. Chybajuci stav si pozicia iny (ano -> priAno -> neutralny).",
+    "priecinok": "obrazky/otuzovanie",
+    "neutralny": "neutralny.svg",
+    "priAno": "priAno.svg",
+    "priNie": "priNie.svg",
+    "ano": "ano.svg"
+  }
+}

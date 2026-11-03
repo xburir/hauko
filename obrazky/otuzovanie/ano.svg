@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <!-- ZASTUPNY obrazok pre stav "ano" — nahrad ho vlastnym (png/jpg/gif/webp), staci prepisat nazov v stranka.json -->
+  <rect x="4" y="4" width="392" height="292" rx="28" fill="#ffe08a" stroke="#2a2a2a" stroke-width="6" stroke-dasharray="18 12"/>
+  <path d="M4,230 Q100,205 200,230 T396,230 L396,268 Q396,296 368,296 L32,296 Q4,296 4,268 Z" fill="#7cc4ef" opacity="0.7"/>
+  <text x="200" y="150" font-size="110" text-anchor="middle" dominant-baseline="middle">💪</text>
+  <text x="200" y="250" font-size="30" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif" fill="#2a2a2a">ano</text>
+  <text x="200" y="282" font-size="17" text-anchor="middle" font-family="system-ui, sans-serif" fill="#2a2a2a" opacity="0.75">po kliknutí na Áno</text>
+</svg>

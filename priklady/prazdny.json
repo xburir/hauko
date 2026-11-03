@@ -1,0 +1,49 @@
+{
+  "_info": "PRAZDNA SABLONA na novy scenar. Skopiruj tento subor v priklady/ pod novym menom (napr. pivo.json), vypln a v scenar.json nastav \"scenar\": \"pivo\". Prazdne \"\" / [] = nic sa nezobrazi (tlacidla bez textu ukazu Ano/Nie, obrazky prazdne = nakresleny psik).",
+
+  "texty": {
+    "_question": "otazka hore",
+    "question": "",
+    "_ano": "napis na tlacidle Ano",
+    "ano": "",
+    "_nie": "napis na tlacidle Nie (to, co utieka)",
+    "nie": "",
+    "_done": "nadpis po kliknuti na Ano",
+    "done": "",
+    "_bubbleHappy": "bublina, ked je prst pri Ano (nahodne jedna zo zoznamu)",
+    "bubbleHappy": [],
+    "_bubbleNeutral": "bublina, ked je prst medzi tlacidlami",
+    "bubbleNeutral": [],
+    "_bubbleSad": "bublina, ked je prst pri Nie",
+    "bubbleSad": [],
+    "_bubbleDone": "bublina po kliknuti na Ano",
+    "bubbleDone": "",
+    "_hints": "text pod tlacidlami po kazdom uteku Nie, postupne za sebou",
+    "hints": []
+  },
+
+  "emoji": {
+    "_info": "Hodnota = nazov temy z emojis.json (love, sad, flex, cold, beer...) ALEBO priamo zoznam ([\"🍺\", \"🍻\"]). \"\" = nic nevyleti.",
+    "_ano": "vystrelia po celej obrazovke po kliknuti na Ano",
+    "ano": "",
+    "_priAno": "letia hore, ked je prst pri Ano",
+    "priAno": "",
+    "_priNie": "padaju dole, ked je prst pri Nie",
+    "priNie": "",
+    "_poAno": "letia hore uz po odpovedi Ano",
+    "poAno": ""
+  },
+
+  "obrazky": {
+    "_info": "Vlastne obrazky namiesto psika, priecinok napr. \"obrazky/pivo\". Vsetko prazdne = nakresleny psik. Chybajuci stav si pozicia iny (ano -> priAno -> neutralny).",
+    "priecinok": "",
+    "_neutralny": "prst je medzi tlacidlami",
+    "neutralny": "",
+    "_priAno": "prst pri Ano",
+    "priAno": "",
+    "_priNie": "prst pri Nie (alebo Nie prave utieklo)",
+    "priNie": "",
+    "_ano": "po kliknuti na Ano",
+    "ano": ""
+  }
+}

@@ -68,6 +68,21 @@
   }
   #dogSvg { width: 100%; height: auto; display: block; overflow: visible; }
 
+  /* vlastné obrázky namiesto nakresleného psíka (scenár -> "obrazky") */
+  #imgWrap { display: none; justify-items: center; align-items: end; will-change: transform; }
+  #imgWrap img {
+    grid-area: 1 / 1;
+    max-width: 100%;
+    max-height: 42vh;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.25s;
+    -webkit-user-drag: none;
+  }
+  #imgWrap img.on { opacity: 1; }
+  body.img-mode #dogSvg { display: none; }
+  body.img-mode #imgWrap { display: grid; }
+
   #buttonRow {
     display: flex;
     gap: 40px;
@@ -118,6 +133,11 @@
   @keyframes floatUp {
     from { transform: translate(-50%, 0) scale(0.6); opacity: 1; }
     to   { transform: translate(calc(-50% + var(--dx)), -120px) scale(1.2); opacity: 0; }
+  }
+  .heart.fall { animation: fallDown 1.6s ease-in forwards; }
+  @keyframes fallDown {
+    from { transform: translate(-50%, 0) scale(1); opacity: 1; }
+    to   { transform: translate(calc(-50% + var(--dx) * 0.4), 110px) scale(0.8); opacity: 0; }
   }
 
   body.done #buttonRow, body.done #hint { display: none; }
@@ -210,6 +230,7 @@
       </g>
     </g>
   </svg>
+  <div id="imgWrap"></div>
 </div>
 
 <div id="buttonRow">
@@ -221,10 +242,12 @@
 
 <script>
 // ===== Texty =====
-// Načítavajú sa z texty.json. Tieto hodnoty sú len záloha, keby sa súbor nepodarilo načítať
+// Načítavajú sa zo scenára v priklady/ (časť "texty"), ktorý vyberá scenar.json. Tieto hodnoty sú len záloha, keby sa súbor nepodarilo načítať
 // (napr. pri otvorení stránky dvojklikom – prehliadač vtedy nedovolí čítať iné súbory).
 const TEXTS = {
   question: "Pôjdeš so mnou na rande?",
+  ano: "Áno",
+  nie: "Nie",
   done: "Juchúúú! Vedel som to! ❤️",
   bubbleHappy: ["Áno áno áno! 😍", "Ešte kúsok! 🥰", "Hav hav! 💕"],
   bubbleNeutral: ["Hmm? 🐶"],
@@ -239,6 +262,62 @@ const TEXTS = {
   ],
 };
 
+// ===== Emoji =====
+// Témy (zoznamy smajlíkov) sú v emojis.json, ktorá téma sa kde použije, určuje scenár
+// (časť "emoji"). Toto je len záloha.
+let EMOJI_THEMES = {
+  love: ["❤️", "💕", "💖", "💗"],
+  sad: ["😢", "😭", "🥺", "💧"],
+};
+const EMOJI_USE = { ano: "love", priAno: "love", priNie: "sad", poAno: "love" };
+
+// ===== Vlastné obrázky =====
+// scenár -> "obrazky": priecinok + súbor pre každý stav. Všetko prázdne = nakreslený psík.
+// Chýbajúci stav si požičia iný: ano -> priAno -> neutralny, priNie/priAno -> neutralny.
+const IMG_STATES = ["neutralny", "priAno", "priNie", "ano"];
+let imgMode = false;
+const imgEls = {};
+
+function setupImages(cfg) {
+  if (!cfg || typeof cfg !== "object") return;
+  const dir = String(cfg.priecinok || "").trim().replace(/\/+$/, "");
+  const raw = {};
+  for (const k of IMG_STATES) {
+    const f = String(cfg[k] || "").trim();
+    raw[k] = f ? (dir && !/^https?:\/\//.test(f) ? dir + "/" + f : f) : "";
+  }
+  const any = raw.neutralny || raw.priAno || raw.priNie || raw.ano;
+  if (!any) return;
+  const src = {
+    neutralny: any,
+    priAno: raw.priAno || raw.neutralny || raw.ano || any,
+    priNie: raw.priNie || raw.neutralny || any,
+    ano: raw.ano || raw.priAno || raw.neutralny || any,
+  };
+  if (raw.neutralny) src.neutralny = raw.neutralny;
+  const wrap = $("imgWrap");
+  wrap.textContent = "";
+  for (const k of IMG_STATES) {
+    const img = document.createElement("img");
+    img.alt = "";
+    img.draggable = false;
+    img.src = encodeURI(src[k]);
+    img.addEventListener("error", () => console.warn("obrázok sa nenačítal:", src[k]));
+    wrap.appendChild(img);
+    imgEls[k] = img;
+  }
+  imgMode = true;
+  document.body.classList.add("img-mode");
+}
+
+// zoznam emoji pre miesto (ano/priAno/priNie/poAno). Hodnota v scenári je buď názov
+// témy z emojis.json ("love"), alebo priamo zoznam (["🍺","🍻"]). Neznáma/prázdna = []
+function emojiSet(where) {
+  const v = EMOJI_USE[where];
+  const list = Array.isArray(v) ? v : v ? EMOJI_THEMES[v] : null;
+  return Array.isArray(list) ? list.filter((e) => typeof e === "string" && e) : [];
+}
+
 const $ = (id) => document.getElementById(id);
 const anoBtn = $("ano"), nieBtn = $("nie"), nieSlot = $("nieSlot");
 const bubble = $("bubble"), hint = $("hint");
@@ -250,17 +329,38 @@ const el = {
   shadow: $("shadow"),
 };
 
-$("question").textContent = TEXTS.question || "";
+function applyTexts() {
+  $("question").textContent = done ? (TEXTS.done || "") : (TEXTS.question || "");
+  anoBtn.textContent = TEXTS.ano || "Áno";
+  nieBtn.textContent = TEXTS.nie || "Nie";
+  fitNieSlot();
+  if (done) setText(bubble, TEXTS.bubbleDone);
+  bubbleKey = ""; // prekresli bublinu s novými textami
+}
 
-fetch("texty.json", { cache: "no-store" })
-  .then((r) => r.json())
-  .then((data) => {
-    Object.assign(TEXTS, data);
-    $("question").textContent = done ? (TEXTS.done || "") : (TEXTS.question || "");
-    if (done) setText(bubble, TEXTS.bubbleDone);
-    bubbleKey = ""; // prekresli bublinu s novými textami
+const loadJson = (file) => fetch(file, { cache: "no-store" }).then((r) => {
+  if (!r.ok) throw new Error(file + ": " + r.status);
+  return r.json();
+});
+
+// scenar.json povie, ktorý scenár z priklady/ je práve na stránke
+loadJson("scenar.json")
+  .then((cfg) => {
+    const name = String(cfg.scenar || "").trim().replace(/\.json$/i, "");
+    if (!name) throw new Error("scenar.json: prázdny \"scenar\"");
+    return loadJson("priklady/" + encodeURIComponent(name) + ".json");
   })
-  .catch(() => console.warn("texty.json sa nepodarilo načítať – používam predvolené texty"));
+  .then((data) => {
+    Object.assign(TEXTS, data.texty || {});
+    Object.assign(EMOJI_USE, data.emoji || {});
+    setupImages(data.obrazky);
+    applyTexts();
+  })
+  .catch((e) => console.warn("scenár sa nepodarilo načítať – používam predvolené texty", e));
+
+loadJson("emojis.json")
+  .then((data) => { EMOJI_THEMES = data; })
+  .catch((e) => console.warn("emojis.json sa nepodarilo načítať – používam predvolené emoji", e));
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 // bezpečný výber z textov: prázdny zoznam / chýbajúca hodnota = nič sa nezobrazí
@@ -281,9 +381,14 @@ window.addEventListener("pointerdown", onPointer);
 let dodges = 0, lastDodge = 0, sadBoost = 0, done = false;
 
 // slot drží miesto v rade, aby sa "Áno" neposúvalo
-const r0 = nieBtn.getBoundingClientRect();
-nieSlot.style.width = r0.width + "px";
-nieSlot.style.height = r0.height + "px";
+function fitNieSlot() {
+  if (nieBtn.classList.contains("fled")) return;
+  nieSlot.style.width = nieSlot.style.height = "";
+  const r0 = nieBtn.getBoundingClientRect();
+  nieSlot.style.width = r0.width + "px";
+  nieSlot.style.height = r0.height + "px";
+}
+fitNieSlot();
 
 function rectDist(x, y, r) {
   const dx = Math.max(r.left - x, 0, x - r.right);
@@ -343,11 +448,14 @@ window.addEventListener("resize", () => {
   nieBtn.style.top = clamp(r.top, 16, window.innerHeight - r.height - 16) + "px";
 });
 
-// ===== Srdiečka =====
-function spawnHeart(x, y, spread = 60) {
+// ===== Vyletujúce emoji =====
+// where = miesto zo scenára "emoji" (ano/priAno/priNie/poAno); fall = padá dole namiesto letu hore
+function spawnEmoji(where, x, y, spread = 60, fall = false) {
+  const list = emojiSet(where);
+  if (!list.length) return;
   const h = document.createElement("div");
-  h.className = "heart";
-  h.textContent = ["❤️", "💕", "💖", "💗"][Math.floor(Math.random() * 4)];
+  h.className = fall ? "heart fall" : "heart";
+  h.textContent = list[Math.floor(Math.random() * list.length)];
   h.style.left = x + (Math.random() - 0.5) * spread + "px";
   h.style.top = y + "px";
   h.style.setProperty("--dx", (Math.random() - 0.5) * 80 + "px");
@@ -356,6 +464,11 @@ function spawnHeart(x, y, spread = 60) {
 }
 
 function headScreenPos() {
+  if (imgMode) {
+    const img = Object.values(imgEls).find((i) => i.classList.contains("on")) || imgEls.neutralny;
+    const r = img.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height * 0.15 };
+  }
   const svg = $("dogSvg").getBoundingClientRect();
   return { x: svg.left + svg.width * (410 / 500), y: svg.top + svg.height * (30 / 215) };
 }
@@ -367,7 +480,7 @@ anoBtn.addEventListener("click", () => {
   $("question").textContent = TEXTS.done || "";
   setText(bubble, TEXTS.bubbleDone);
   for (let i = 0; i < 40; i++) {
-    setTimeout(() => spawnHeart(Math.random() * window.innerWidth, window.innerHeight * (0.3 + Math.random() * 0.6), 0), i * 60);
+    setTimeout(() => spawnEmoji("ano", Math.random() * window.innerWidth, window.innerHeight * (0.3 + Math.random() * 0.6), 0), i * 60);
   }
 });
 
@@ -394,6 +507,19 @@ function pickBubble(m) {
   setText(bubble, pick(list));
 }
 
+let imgState = "";
+function frameImages(happy, sad, bounce) {
+  const key = done ? "ano" : happy > 0.45 ? "priAno" : sad > 0.45 ? "priNie" : "neutralny";
+  if (key !== imgState) {
+    imgState = key;
+    for (const k of IMG_STATES) imgEls[k].classList.toggle("on", k === key);
+  }
+  // poskakovanie pri radosti, pri smútku sa obrázok skloní a trochu zmenší
+  const tilt = sad * -5 + Math.sin(phase / 2) * 3 * happy;
+  $("imgWrap").style.transform =
+    `translateY(${(-bounce * 2.5 + sad * 6).toFixed(1)}px) rotate(${tilt.toFixed(2)}deg) scale(${(1 + happy * 0.04 - sad * 0.05).toFixed(3)})`;
+}
+
 function frame(now) {
   const dt = Math.min((now - last) / 1000, 0.05);
   last = now;
@@ -416,6 +542,7 @@ function frame(now) {
   const bounce = happy > 0.6 ? Math.abs(Math.sin(phase / 2)) * 8 * (happy - 0.6) / 0.4 : 0;
   el.dog.setAttribute("transform", `translate(0 ${-bounce + sad * 4})`);
   el.shadow.setAttribute("rx", 170 - bounce * 2);
+  if (imgMode) frameImages(happy, sad, bounce);
 
   // hlava a ucho
   const headAngle = lerp(0, 12, sad) - lerp(0, 5, happy) + Math.sin(phase / 2) * 2 * happy;
@@ -453,12 +580,17 @@ function frame(now) {
   el.tear.setAttribute("opacity", tearOn * (1 - fall / 22));
   el.tear.setAttribute("transform", `translate(0 ${fall})`);
 
-  // srdiečka pri veľkej radosti
+  // emoji pri veľkej radosti (hore) alebo veľkom smútku (padajú dole)
   heartTimer -= dt;
-  if (happy > 0.75 && heartTimer <= 0) {
+  if (heartTimer <= 0) {
     const p = headScreenPos();
-    spawnHeart(p.x, p.y);
-    heartTimer = done ? 0.15 : 0.45;
+    if (happy > 0.75) {
+      spawnEmoji(done ? "poAno" : "priAno", p.x, p.y);
+      heartTimer = done ? 0.15 : 0.45;
+    } else if (sad > 0.75) {
+      spawnEmoji("priNie", p.x, p.y + 40, 40, true);
+      heartTimer = 0.6;
+    }
   }
 
   bubble.style.transform = `scale(${1 + happy * 0.08}) rotate(${Math.sin(phase / 2) * 2 * happy}deg)`;

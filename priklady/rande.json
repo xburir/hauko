@@ -1,0 +1,53 @@
+{
+  "_info": "Scenar rande. Zapne sa v scenar.json: \"scenar\": \"rande\". Kluce zacinajuce _ su len poznamky.",
+  "texty": {
+    "question": "Pôjdeš so mnou na rande?",
+    "ano": "Áno",
+    "nie": "Nie",
+    "done": "Juchúúú! Vedel som to! ❤️",
+    "bubbleHappy": [
+      "Áno áno áno! 😍",
+      "Ešte kúsok! 🥰",
+      "Hav hav! 💕"
+    ],
+    "bubbleNeutral": [
+      "Hmm? 🐶"
+    ],
+    "bubbleSad": [
+      "Nie... naozaj? 🥺",
+      "Psík je smutný 😢"
+    ],
+    "bubbleDone": "Najlepší deň! 🐾💖",
+    "hints": [
+      "Ups, ušlo to 😏",
+      "Skús ešte raz…",
+      "Psík plače 😢",
+      "Tlačidlo „Nie“ je dnes na dovolenke 🏖️",
+      "Však vieš, ktoré je to správne 😉"
+    ]
+  },
+  "emoji": {
+    "_info": "Hodnota = nazov temy z emojis.json (\"love\") ALEBO priamo zoznam ([\"🍺\", \"🍻\"]). \"\" = nic nevyleti.",
+    "_ano": "vystrelia po celej obrazovke po kliknuti na Ano",
+    "ano": "love",
+    "_priAno": "letia hore, ked je prst/mys pri tlacidle Ano",
+    "priAno": "love",
+    "_priNie": "padaju dole, ked je prst/mys pri tlacidle Nie (alebo Nie prave utieklo)",
+    "priNie": "sad",
+    "_poAno": "letia hore uz po odpovedi Ano",
+    "poAno": "love"
+  },
+  "obrazky": {
+    "_info": "Vlastne obrazky namiesto nakresleneho psika. priecinok = kde su (pod obrazky/), dalej subor pre kazdy stav. Vsetko prazdne = nakresleny psik. Chybajuci stav si pozicia iny (ano -> priAno -> neutralny). Funguje png, jpg, gif, webp, svg.",
+    "_priklad": "priecinok \"obrazky/hotdog\" + neutralny \"dog-hotdog.gif\"",
+    "priecinok": "",
+    "_neutralny": "prst je niekde medzi tlacidlami",
+    "neutralny": "",
+    "_priAno": "prst/mys pri tlacidle Ano",
+    "priAno": "",
+    "_priNie": "prst/mys pri tlacidle Nie (alebo Nie prave utieklo)",
+    "priNie": "",
+    "_ano": "po kliknuti na Ano",
+    "ano": ""
+  }
+}
