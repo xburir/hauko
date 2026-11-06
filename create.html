@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vytvor otázočku</title>
+<style>
+  :root {
+    --bg: #fff4f6;
+    --card: #ffffff;
+    --ink: #2a2a2a;
+    --muted: #6d6268;
+    --line: #f0d4dc;
+    --pink: #ff5c8a;
+    --pink-dark: #e04374;
+    --ok: #1f8a4c;
+    --err: #c62f4b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.45 "Segoe UI", system-ui, sans-serif;
+  }
+  header { padding: 22px 16px 6px; max-width: 1180px; margin: auto; }
+  header h1 { margin: 0; font-size: clamp(24px, 5vw, 34px); }
+  header p { margin: 4px 0 0; color: var(--muted); }
+
+  main {
+    max-width: 1180px;
+    margin: auto;
+    padding: 12px 16px 60px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    main { grid-template-columns: minmax(0, 1fr); }
+    #previewCol { order: -1; position: static !important; }
+    #preview { height: 520px !important; }
+  }
+
+  .card {
+    background: var(--card);
+    border: 2px solid var(--line);
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .card h2 { margin: 0 0 4px; font-size: 19px; }
+  .card > .sub { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+
+  label { display: block; font-weight: 600; font-size: 14px; margin: 12px 0 4px; }
+  label small { font-weight: 400; color: var(--muted); }
+  input[type=text], textarea, select {
+    width: 100%;
+    font: inherit;
+    padding: 9px 12px;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--ink);
+  }
+  textarea { resize: vertical; min-height: 78px; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--pink); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+  @media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+
+  .templates { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font: inherit; font-size: 14px; font-weight: 600;
+    padding: 6px 14px; border-radius: 999px;
+    border: 2px solid var(--line); background: #fff; cursor: pointer; color: var(--ink);
+  }
+  .chip:hover { border-color: var(--pink); }
+
+  .colors { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+  @media (max-width: 520px) { .colors { grid-template-columns: 1fr; } }
+  .colorPick { display: flex; align-items: center; gap: 10px; }
+  .colorPick input[type=color] {
+    width: 52px; height: 42px; padding: 2px; border: 2px solid var(--line); border-radius: 12px;
+    background: #fff; cursor: pointer; flex: none;
+  }
+  .colorPick input[type=color]:focus { outline: none; border-color: var(--pink); }
+  .colorPick code { font-size: 14px; color: var(--muted); min-width: 64px; }
+  .colorPick .chip { padding: 4px 12px; font-size: 13px; }
+  .colorPick .chip[hidden] { display: none; }
+  .emojiRow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+  @media (max-width: 520px) { .emojiRow { grid-template-columns: 1fr; } }
+  .emojiRow input[type=text] { margin-top: 6px; }
+
+  .imgs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 620px) { .imgs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .slot {
+    border: 2px dashed var(--line); border-radius: 14px; padding: 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+    position: relative;
+  }
+  .slot.drag { border-color: var(--pink); background: #fff0f4; }
+  .slot b { font-size: 13px; }
+  .slot small { color: var(--muted); font-size: 12px; line-height: 1.25; }
+  .thumb {
+    width: 100%; aspect-ratio: 1; border-radius: 10px; background: #fbf3f5;
+    display: grid; place-items: center; overflow: hidden; cursor: pointer;
+    color: var(--muted); font-size: 30px;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: contain; }
+  .slot .rm {
+    position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 50%;
+    border: 2px solid var(--ink); background: #fff; cursor: pointer; font-weight: 700; line-height: 1;
+    display: none;
+  }
+  .slot.has .rm { display: block; }
+  .slot input[type=file] { display: none; }
+
+  #previewCol { position: sticky; top: 12px; }
+  #preview {
+    width: 100%; height: 640px; border: 3px solid var(--ink); border-radius: 26px;
+    background: var(--bg); display: block;
+  }
+  .previewBar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .previewBar b { font-size: 15px; }
+
+  .primary {
+    font: inherit; font-size: 20px; font-weight: 700;
+    padding: 14px 34px; border-radius: 999px; border: 3px solid var(--ink);
+    background: var(--pink); color: #fff; cursor: pointer; width: 100%;
+  }
+  .primary:hover { background: var(--pink-dark); }
+  .primary:disabled { opacity: 0.55; cursor: wait; }
+  #status { margin: 10px 0 0; font-size: 14px; color: var(--muted); text-align: center; min-height: 20px; }
+  #status.err { color: var(--err); font-weight: 600; }
+
+  #result { display: none; text-align: center; }
+  #result.on { display: block; }
+  #result h2 { font-size: 24px; }
+  .linkBox { display: flex; gap: 8px; margin: 12px 0; }
+  .linkBox input { flex: 1; font-weight: 600; min-width: 0; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .actions a, .actions button { text-decoration: none; }
+  .progress { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin-top: 10px; display: none; }
+  .progress.on { display: block; }
+  .progress i { display: block; height: 100%; width: 0; background: var(--pink); transition: width 0.15s; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Vytvor vlastnú otázočku 🐶</h1>
+  <p>Vyplň texty, vyber emoji, prípadne nahraj obrázky. Dostaneš odkaz, ktorý len pošleš.</p>
+</header>
+
+<main>
+  <div id="formCol">
+    <div class="card">
+      <h2>Začni z príkladu</h2>
+      <p class="sub">Vyplní formulár, potom si to uprav po svojom.</p>
+      <div class="templates">
+        <button class="chip" data-tpl="rande">❤️ Rande</button>
+        <button class="chip" data-tpl="prazdny">🧹 Prázdne</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Otázka a tlačidlá</h2>
+      <label for="question">Otázka</label>
+      <input type="text" id="question" maxlength="200" placeholder="Pôjdeš so mnou na rande?">
+      <div class="row2">
+        <div>
+          <label for="ano">Tlačidlo „Áno“</label>
+          <input type="text" id="ano" maxlength="40" placeholder="Áno">
+        </div>
+        <div>
+          <label for="nie">Tlačidlo „Nie“ <small>(to, čo uteká)</small></label>
+          <input type="text" id="nie" maxlength="40" placeholder="Nie">
+        </div>
+      </div>
+      <label for="done">Nadpis po kliknutí na „Áno“</label>
+      <input type="text" id="done" maxlength="200" placeholder="Juchúúú! Vedel som to! ❤️">
+    </div>
+
+    <div class="card">
+      <h2>Farby</h2>
+      <p class="sub">Nepovinné. Farba textu sa prispôsobí sama, aby bol čitateľný.</p>
+      <div class="colors">
+        <div>
+          <label for="color-pozadie">Pozadie stránky</label>
+          <div class="colorPick">
+            <input type="color" id="color-pozadie" data-default="#fff4f6">
+            <code></code>
+            <button class="chip" type="button" data-reset="pozadie">Predvolená</button>
+          </div>
+        </div>
+        <div>
+          <label for="color-ano">Tlačidlo „Áno“</label>
+          <div class="colorPick">
+            <input type="color" id="color-ano" data-default="#ff5c8a">
+            <code></code>
+            <button class="chip" type="button" data-reset="ano">Predvolená</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Bubliny</h2>
+      <p class="sub">Text v bubline nad obrázkom. Každý riadok = jedna bublina, vyberá sa náhodne.</p>
+      <label for="bubbleHappy">Keď je prst pri „Áno“</label>
+      <textarea id="bubbleHappy" data-list="15" data-max="120"></textarea>
+      <label for="bubbleNeutral">Keď je prst medzi tlačidlami</label>
+      <textarea id="bubbleNeutral" data-list="15" data-max="120"></textarea>
+      <label for="bubbleSad">Keď je prst pri „Nie“</label>
+      <textarea id="bubbleSad" data-list="15" data-max="120"></textarea>
+      <label for="bubbleDone">Po kliknutí na „Áno“</label>
+      <input type="text" id="bubbleDone" maxlength="120">
+    </div>
+
+    <div class="card">
+      <h2>Hinty</h2>
+      <p class="sub">Text pod tlačidlami po každom úteku „Nie“. Idú postupne za sebou, každý riadok = jeden hint.</p>
+      <textarea id="hints" data-list="30" data-max="150" style="min-height:120px"></textarea>
+    </div>
+
+    <div class="card">
+      <h2>Emoji</h2>
+      <p class="sub">Vyber tému, alebo „Vlastné“ a napíš svoje emoji (napr. 🍺🍻🥨).</p>
+      <div class="emojiRow" id="emojiRow"></div>
+    </div>
+
+    <div class="card">
+      <h2>Obrázky</h2>
+      <p class="sub">Nepovinné. Bez obrázkov sa zobrazí nakreslený psík. Chýbajúci stav si požičia iný obrázok. PNG, JPG, GIF alebo WEBP, najviac 5 MB.</p>
+      <div class="imgs" id="imgs"></div>
+    </div>
+
+    <div class="card" id="submitCard">
+      <button class="primary" id="create">Vytvoriť odkaz ✨</button>
+      <div class="progress" id="progress"><i></i></div>
+      <p id="status"></p>
+    </div>
+
+    <div class="card" id="result">
+      <h2>Hotovo! 🎉</h2>
+      <p class="sub">Tento odkaz pošli. Kto ho otvorí, uvidí len otázku.</p>
+      <div class="linkBox">
+        <input type="text" id="link" readonly>
+        <button class="chip" id="copy">Kopírovať</button>
+      </div>
+      <div class="actions">
+        <button class="chip" id="share" hidden>Zdieľať…</button>
+        <a class="chip" id="open" target="_blank" rel="noopener">Otvoriť</a>
+        <button class="chip" id="again">Vytvoriť ďalší</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="previewCol">
+    <div class="previewBar">
+      <b>Náhľad</b>
+      <button class="chip" id="restart">↺ Od začiatku</button>
+    </div>
+    <iframe id="preview" src="/psik.html?nahlad" title="Náhľad"></iframe>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const MAX_IMG = 5 * 1024 * 1024;
+const IMG_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+const TEXT_FIELDS = ["question", "ano", "nie", "done", "bubbleDone"];
+const LIST_FIELDS = ["bubbleHappy", "bubbleNeutral", "bubbleSad", "hints"];
+
+const EMOJI_PLACES = [
+  { key: "priAno", label: "Letia hore, keď je prst pri „Áno“" },
+  { key: "priNie", label: "Padajú dole, keď je prst pri „Nie“" },
+  { key: "ano", label: "Vystrelia po kliknutí na „Áno“" },
+  { key: "poAno", label: "Letia hore po odpovedi „Áno“" },
+];
+const IMG_STATES = [
+  { key: "neutralny", label: "Neutrálny", hint: "prst medzi tlačidlami" },
+  { key: "priAno", label: "Pri „Áno“", hint: "prst pri Áno" },
+  { key: "priNie", label: "Pri „Nie“", hint: "prst pri Nie" },
+  { key: "ano", label: "Po „Áno“", hint: "po kliknutí na Áno" },
+];
+
+let themes = {};
+const images = {}; // key -> { file, url }
+
+// ---- emoji -----------------------------------------------------------------
+function buildEmoji() {
+  const row = $("emojiRow");
+  row.textContent = "";
+  for (const p of EMOJI_PLACES) {
+    const wrap = document.createElement("div");
+    const lab = document.createElement("label");
+    lab.textContent = p.label;
+    lab.htmlFor = "emoji-" + p.key;
+    const sel = document.createElement("select");
+    sel.id = "emoji-" + p.key;
+    const add = (value, text) => {
+      const o = document.createElement("option");
+      o.value = value; o.textContent = text;
+      sel.appendChild(o);
+    };
+    for (const [name, list] of Object.entries(themes)) {
+      if (name.startsWith("_") || !Array.isArray(list)) continue;
+      add("t:" + name, list.slice(0, 5).join(" ") + "  (" + name + ")");
+    }
+    add("vlastne", "✏️ Vlastné…");
+    add("", "🚫 Nič");
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.id = "emojiCustom-" + p.key;
+    inp.placeholder = "🍺🍻🥨";
+    inp.hidden = true;
+    sel.addEventListener("change", () => { inp.hidden = sel.value !== "vlastne"; if (!inp.hidden) inp.focus(); changed(); });
+    inp.addEventListener("input", changed);
+    wrap.append(lab, sel, inp);
+    row.appendChild(wrap);
+  }
+}
+
+// rozdelí text na jednotlivé emoji (grafémy), ignoruje medzery a čiarky
+function splitEmoji(text) {
+  const seg = typeof Intl !== "undefined" && Intl.Segmenter
+    ? [...new Intl.Segmenter("sk", { granularity: "grapheme" }).segment(text)].map((s) => s.segment)
+    : [...text];
+  return seg.filter((g) => g.trim() && !/^[,;.]$/.test(g)).slice(0, 30);
+}
+
+function setEmoji(key, v) {
+  const sel = $("emoji-" + key), inp = $("emojiCustom-" + key);
+  if (!sel) return;
+  if (Array.isArray(v)) { sel.value = "vlastne"; inp.value = v.join(""); }
+  else if (v && themes[v]) { sel.value = "t:" + v; inp.value = ""; }
+  else { sel.value = ""; inp.value = ""; }
+  inp.hidden = sel.value !== "vlastne";
+}
+
+function getEmoji(key) {
+  const sel = $("emoji-" + key);
+  if (!sel || !sel.value) return "";
+  if (sel.value.startsWith("t:")) return sel.value.slice(2);
+  const list = splitEmoji($("emojiCustom-" + key).value);
+  return list.length ? list : "";
+}
+
+// ---- obrázky ---------------------------------------------------------------
+function buildImages() {
+  const box = $("imgs");
+  for (const s of IMG_STATES) {
+    const slot = document.createElement("div");
+    slot.className = "slot";
+    slot.innerHTML = `<button class="rm" title="Odstrániť" type="button">×</button>
+      <div class="thumb" title="Vybrať obrázok">＋</div>
+      <b></b><small></small><input type="file" accept="image/png,image/jpeg,image/gif,image/webp">`;
+    slot.querySelector("b").textContent = s.label;
+    slot.querySelector("small").textContent = s.hint;
+    const file = slot.querySelector("input");
+    const thumb = slot.querySelector(".thumb");
+    thumb.addEventListener("click", () => file.click());
+    file.addEventListener("change", () => { if (file.files[0]) setImage(s.key, file.files[0], slot); file.value = ""; });
+    slot.querySelector(".rm").addEventListener("click", () => setImage(s.key, null, slot));
+    slot.addEventListener("dragover", (e) => { e.preventDefault(); slot.classList.add("drag"); });
+    slot.addEventListener("dragleave", () => slot.classList.remove("drag"));
+    slot.addEventListener("drop", (e) => {
+      e.preventDefault(); slot.classList.remove("drag");
+      const f = e.dataTransfer.files[0];
+      if (f) setImage(s.key, f, slot);
+    });
+    box.appendChild(slot);
+  }
+}
+
+function setImage(key, file, slot) {
+  const thumb = slot.querySelector(".thumb");
+  if (file) {
+    if (!IMG_TYPES.includes(file.type)) return showStatus("Obrázok musí byť PNG, JPG, GIF alebo WEBP.", true);
+    if (file.size > MAX_IMG) return showStatus(`„${file.name}“ má ${(file.size / 1048576).toFixed(1)} MB, najviac je 5 MB.`, true);
+    showStatus("");
+  }
+  if (images[key]) URL.revokeObjectURL(images[key].url);
+  delete images[key];
+  thumb.textContent = "";
+  if (file) {
+    images[key] = { file, url: URL.createObjectURL(file) };
+    const img = document.createElement("img");
+    img.src = images[key].url;
+    img.alt = "";
+    thumb.appendChild(img);
+  } else {
+    thumb.textContent = "＋";
+  }
+  slot.classList.toggle("has", !!file);
+  changed();
+}
+
+// ---- farby -----------------------------------------------------------------
+// prázdna = predvolená (data-set chýba); <input type=color> nevie byť prázdny, preto príznak
+const COLOR_KEYS = ["pozadie", "ano"];
+function setColor(key, value) {
+  const inp = $("color-" + key);
+  const v = /^#[0-9a-f]{6}$/i.test(value || "") ? value.toLowerCase() : "";
+  inp.value = v || inp.dataset.default;
+  if (v) inp.dataset.set = "1"; else delete inp.dataset.set;
+  const box = inp.parentElement;
+  box.querySelector("code").textContent = v || "predvolená";
+  box.querySelector("[data-reset]").hidden = !v;
+}
+const getColor = (key) => ($("color-" + key).dataset.set ? $("color-" + key).value : "");
+for (const k of COLOR_KEYS) {
+  $("color-" + k).addEventListener("input", (e) => { setColor(k, e.target.value); changed(); });
+  document.querySelector(`[data-reset="${k}"]`).addEventListener("click", () => { setColor(k, ""); changed(); });
+  setColor(k, "");
+}
+
+// ---- formulár <-> scenár ---------------------------------------------------
+const lines = (v) => v.split("\n").map((s) => s.trim()).filter(Boolean);
+
+function readForm() {
+  const texty = {};
+  for (const f of TEXT_FIELDS) texty[f] = $(f).value.trim();
+  for (const f of LIST_FIELDS) {
+    const el = $(f);
+    texty[f] = lines(el.value).slice(0, Number(el.dataset.list)).map((s) => [...s].slice(0, Number(el.dataset.max)).join(""));
+  }
+  const emoji = {};
+  for (const p of EMOJI_PLACES) emoji[p.key] = getEmoji(p.key);
+  const farby = {};
+  for (const k of COLOR_KEYS) farby[k] = getColor(k);
+  return { texty, emoji, farby };
+}
+
+function fillForm(data) {
+  const t = data.texty || {};
+  for (const f of TEXT_FIELDS) $(f).value = typeof t[f] === "string" ? t[f] : "";
+  for (const f of LIST_FIELDS) $(f).value = Array.isArray(t[f]) ? t[f].join("\n") : "";
+  const e = data.emoji || {};
+  for (const p of EMOJI_PLACES) setEmoji(p.key, e[p.key]);
+  const f = data.farby || {};
+  for (const k of COLOR_KEYS) setColor(k, f[k]);
+  changed();
+}
+
+// ---- náhľad ----------------------------------------------------------------
+const frame = $("preview");
+let previewReady = false, previewTimer = 0;
+
+function sendPreview() {
+  if (!previewReady) return;
+  const s = readForm();
+  const obrazky = {};
+  for (const [k, v] of Object.entries(images)) obrazky[k] = v.url;
+  frame.contentWindow.postMessage({ type: "hauko-nahlad", scenar: { ...s, obrazky } }, location.origin);
+}
+function changed() {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(sendPreview, 250);
+  try { localStorage.setItem("hauko-koncept", JSON.stringify(readForm())); } catch { /* bez úložiska */ }
+}
+window.addEventListener("message", (e) => {
+  if (e.origin === location.origin && e.data && e.data.type === "hauko-nahlad-pripraveny") {
+    previewReady = true;
+    sendPreview();
+  }
+});
+$("restart").addEventListener("click", () => { previewReady = false; frame.src = "/psik.html?nahlad&t=" + Date.now(); });
+
+document.addEventListener("input", (e) => { if (e.target.closest("#formCol") && !e.target.id.startsWith("emojiCustom")) changed(); });
+
+// ---- príklady --------------------------------------------------------------
+async function loadTemplate(name) {
+  try {
+    const r = await fetch("/priklady/" + name + ".json", { cache: "no-store" });
+    fillForm(await r.json());
+  } catch {
+    showStatus("Príklad sa nepodarilo načítať.", true);
+  }
+}
+document.querySelectorAll("[data-tpl]").forEach((b) => b.addEventListener("click", () => loadTemplate(b.dataset.tpl)));
+
+// ---- odoslanie -------------------------------------------------------------
+function showStatus(text, err = false) {
+  $("status").textContent = text;
+  $("status").classList.toggle("err", err);
+}
+
+const toDataUrl = (file) => new Promise((resolve, reject) => {
+  const r = new FileReader();
+  r.onload = () => resolve(r.result);
+  r.onerror = () => reject(r.error);
+  r.readAsDataURL(file);
+});
+
+async function refreshStatus() {
+  try {
+    const s = await (await fetch("/api/status", { cache: "no-store" })).json();
+    if (s.blokovane) { showStatus("Vytváranie je dočasne vypnuté. Skús neskôr.", true); $("create").disabled = true; }
+    else if (s.zostava <= 0) showStatus("Túto hodinu si už vytvoril maximum odkazov. Skús neskôr.", true);
+    else showStatus(`Túto hodinu môžeš vytvoriť ešte ${s.zostava} ${s.zostava === 1 ? "odkaz" : "odkazy"}.`);
+  } catch { /* nevadí */ }
+}
+
+$("create").addEventListener("click", async () => {
+  const s = readForm();
+  if (!s.texty.question) { showStatus("Napíš aspoň otázku.", true); $("question").focus(); return; }
+  const btn = $("create");
+  btn.disabled = true;
+  showStatus("Pripravujem…");
+  try {
+    const obrazky = {};
+    for (const [k, v] of Object.entries(images)) obrazky[k] = await toDataUrl(v.file);
+    const body = JSON.stringify({ ...s, obrazky });
+
+    const res = await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/api/create");
+      xhr.setRequestHeader("Content-Type", "application/json");
+      const bar = $("progress");
+      bar.classList.add("on");
+      xhr.upload.onprogress = (e) => { if (e.lengthComputable) bar.firstElementChild.style.width = (e.loaded / e.total * 100) + "%"; };
+      xhr.onload = () => {
+        bar.classList.remove("on");
+        let data = {};
+        try { data = JSON.parse(xhr.responseText); } catch { /* nie JSON (napr. nginx 413) */ }
+        if (xhr.status === 413) data.error = "Obrázky sú spolu príliš veľké.";
+        resolve({ ok: xhr.status === 200, data });
+      };
+      xhr.onerror = () => { bar.classList.remove("on"); reject(new Error("Spojenie zlyhalo.")); };
+      xhr.send(body);
+    });
+
+    if (!res.ok) throw new Error(res.data.error || "Nepodarilo sa vytvoriť odkaz.");
+    const url = location.origin + res.data.url;
+    $("link").value = url;
+    $("open").href = url;
+    $("share").hidden = !navigator.share;
+    $("result").classList.add("on");
+    $("submitCard").style.display = "none";
+    $("result").scrollIntoView({ behavior: "smooth", block: "center" });
+    try { localStorage.removeItem("hauko-koncept"); } catch { /* nevadí */ }
+  } catch (e) {
+    showStatus(e.message, true);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$("copy").addEventListener("click", async () => {
+  const inp = $("link");
+  try { await navigator.clipboard.writeText(inp.value); }
+  catch { inp.select(); document.execCommand("copy"); }
+  $("copy").textContent = "Skopírované ✓";
+  setTimeout(() => ($("copy").textContent = "Kopírovať"), 1800);
+});
+$("share").addEventListener("click", () => {
+  navigator.share({ title: $("question").value, url: $("link").value }).catch(() => {});
+});
+$("again").addEventListener("click", () => {
+  $("result").classList.remove("on");
+  $("submitCard").style.display = "";
+  refreshStatus();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+// ---- štart -----------------------------------------------------------------
+(async () => {
+  try { themes = await (await fetch("/emojis.json")).json(); } catch { themes = {}; }
+  buildEmoji();
+  buildImages();
+  let draft = null;
+  try { draft = JSON.parse(localStorage.getItem("hauko-koncept") || "null"); } catch { /* nič */ }
+  if (draft && draft.texty) fillForm(draft);
+  else await loadTemplate("rande");
+  refreshStatus();
+})();
+</script>
+</body>
+</html>

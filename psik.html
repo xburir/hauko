@@ -10,6 +10,9 @@
     --ink: #2a2a2a;
     --pink: #ff5c8a;
     --pink-dark: #e04374;
+    /* farby zo scenára ("farby") ich prepíšu; text sa prispôsobí, aby bol čitateľný */
+    --page-ink: var(--ink);
+    --ano-ink: #fff;
   }
 
   * { box-sizing: border-box; }
@@ -23,7 +26,7 @@
   body {
     background: var(--bg);
     font-family: "Segoe UI", system-ui, sans-serif;
-    color: var(--ink);
+    color: var(--page-ink);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -43,6 +46,7 @@
 
   #bubble {
     background: #fff;
+    color: var(--ink);
     border: 3px solid var(--ink);
     border-radius: 18px;
     padding: 8px 16px;
@@ -103,7 +107,7 @@
 
   #ano {
     background: var(--pink);
-    color: #fff;
+    color: var(--ano-ink);
     transition: transform 0.25s, background 0.2s;
   }
   #ano:hover { background: var(--pink-dark); }
@@ -275,16 +279,24 @@ const EMOJI_USE = { ano: "love", priAno: "love", priNie: "sad", poAno: "love" };
 // scenár -> "obrazky": priecinok + súbor pre každý stav. Všetko prázdne = nakreslený psík.
 // Chýbajúci stav si požičia iný: ano -> priAno -> neutralny, priNie/priAno -> neutralny.
 const IMG_STATES = ["neutralny", "priAno", "priNie", "ano"];
-let imgMode = false;
+let imgMode = false, imgState = "";
 const imgEls = {};
 
 function setupImages(cfg) {
+  // reset (náhľad môže scenár meniť opakovane)
+  imgMode = false;
+  imgState = "";
+  document.body.classList.remove("img-mode");
+  $("imgWrap").textContent = "";
+  for (const k of IMG_STATES) delete imgEls[k];
   if (!cfg || typeof cfg !== "object") return;
-  const dir = String(cfg.priecinok || "").trim().replace(/\/+$/, "");
+  let dir = String(cfg.priecinok || "").trim().replace(/\/+$/, "");
+  // "obrazky/pivo" je od koreňa webu (stránka môže bežať aj na /s/<id>, kde by relatívna cesta neplatila)
+  if (dir && !/^(https?:|\/)/.test(dir)) dir = "/" + dir;
   const raw = {};
   for (const k of IMG_STATES) {
     const f = String(cfg[k] || "").trim();
-    raw[k] = f ? (dir && !/^https?:\/\//.test(f) ? dir + "/" + f : f) : "";
+    raw[k] = f ? (dir && !/^(https?:|blob:|data:|\/)/.test(f) ? dir + "/" + f : f) : "";
   }
   const any = raw.neutralny || raw.priAno || raw.priNie || raw.ano;
   if (!any) return;
@@ -296,12 +308,11 @@ function setupImages(cfg) {
   };
   if (raw.neutralny) src.neutralny = raw.neutralny;
   const wrap = $("imgWrap");
-  wrap.textContent = "";
   for (const k of IMG_STATES) {
     const img = document.createElement("img");
     img.alt = "";
     img.draggable = false;
-    img.src = encodeURI(src[k]);
+    img.src = /^(blob:|data:)/.test(src[k]) ? src[k] : encodeURI(src[k]);
     img.addEventListener("error", () => console.warn("obrázok sa nenačítal:", src[k]));
     wrap.appendChild(img);
     imgEls[k] = img;
@@ -343,22 +354,89 @@ const loadJson = (file) => fetch(file, { cache: "no-store" }).then((r) => {
   return r.json();
 });
 
-// scenar.json povie, ktorý scenár z priklady/ je práve na stránke
-loadJson("scenar.json")
-  .then((cfg) => {
-    const name = String(cfg.scenar || "").trim().replace(/\.json$/i, "");
-    if (!name) throw new Error("scenar.json: prázdny \"scenar\"");
-    return loadJson("priklady/" + encodeURIComponent(name) + ".json");
-  })
-  .then((data) => {
-    Object.assign(TEXTS, data.texty || {});
-    Object.assign(EMOJI_USE, data.emoji || {});
-    setupImages(data.obrazky);
-    applyTexts();
-  })
-  .catch((e) => console.warn("scenár sa nepodarilo načítať – používam predvolené texty", e));
+// predvolené hodnoty, aby sa náhľad dal opakovane prekresliť od nuly
+const TEXTS_DEFAULT = JSON.parse(JSON.stringify(TEXTS));
+const EMOJI_DEFAULT = { ...EMOJI_USE };
 
-loadJson("emojis.json")
+// ===== Farby =====
+// scenár -> "farby": { "pozadie": "#rrggbb", "ano": "#rrggbb" }; prázdne = predvolené
+const HEX = /^#[0-9a-f]{6}$/i;
+function luminance(hex) {
+  const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+// tmavá alebo svetlá farba textu podľa toho, čo je lepšie čitateľné na pozadí
+const readableInk = (hex) => (luminance(hex) > 0.4 ? "#2a2a2a" : "#ffffff");
+function darken(hex, f = 0.85) {
+  return "#" + [1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * f).toString(16).padStart(2, "0")).join("");
+}
+function applyColors(f) {
+  const root = document.documentElement.style;
+  f = f && typeof f === "object" ? f : {};
+  if (HEX.test(f.pozadie || "")) {
+    root.setProperty("--bg", f.pozadie);
+    root.setProperty("--page-ink", readableInk(f.pozadie));
+  } else {
+    root.removeProperty("--bg");
+    root.removeProperty("--page-ink");
+  }
+  if (HEX.test(f.ano || "")) {
+    root.setProperty("--pink", f.ano);
+    root.setProperty("--pink-dark", darken(f.ano));
+    root.setProperty("--ano-ink", luminance(f.ano) > 0.55 ? "#2a2a2a" : "#ffffff");
+  } else {
+    for (const v of ["--pink", "--pink-dark", "--ano-ink"]) root.removeProperty(v);
+  }
+}
+
+function applyScenario(data) {
+  applyColors(data.farby);
+  for (const k of Object.keys(TEXTS)) delete TEXTS[k];
+  Object.assign(TEXTS, TEXTS_DEFAULT, data.texty || {});
+  for (const k of Object.keys(EMOJI_USE)) delete EMOJI_USE[k];
+  Object.assign(EMOJI_USE, EMOJI_DEFAULT, data.emoji || {});
+  setupImages(data.obrazky);
+  if (TEXTS.question) document.title = TEXTS.question;
+  applyTexts();
+}
+
+// Odkiaľ sa berie scenár:
+//   /s/<id>          -> /s/<id>/scenar.json (vytvorený cez /create, alebo priklady/<id>.json)
+//   /?nahlad         -> formulár /create posiela scenár cez postMessage
+//   /                -> scenar.json vyberie scenár z priklady/
+const shareMatch = location.pathname.match(/^\/s\/([A-Za-z0-9_-]+)\/?$/);
+const PREVIEW = new URLSearchParams(location.search).has("nahlad");
+
+if (PREVIEW) {
+  window.addEventListener("message", (e) => {
+    if (e.origin !== location.origin || !e.data || e.data.type !== "hauko-nahlad") return;
+    applyScenario(e.data.scenar || {});
+  });
+  window.parent.postMessage({ type: "hauko-nahlad-pripraveny" }, location.origin);
+} else if (shareMatch) {
+  loadJson("/s/" + shareMatch[1] + "/scenar.json")
+    .then((data) => {
+      // obrázky nahraté cez /create ležia vedľa scenar.json
+      if (data.obrazky && !data.obrazky.priecinok && !Object.values(data.obrazky).some((v) => String(v).includes("/"))) {
+        data.obrazky = { priecinok: "/s/" + shareMatch[1], ...data.obrazky };
+      }
+      applyScenario(data);
+    })
+    .catch((e) => console.warn("scenár sa nepodarilo načítať – používam predvolené texty", e));
+} else {
+  // scenar.json povie, ktorý scenár z priklady/ je práve na stránke
+  loadJson("/scenar.json")
+    .then((cfg) => {
+      const name = String(cfg.scenar || "").trim().replace(/\.json$/i, "");
+      if (!name) throw new Error("scenar.json: prázdny \"scenar\"");
+      return loadJson("/priklady/" + encodeURIComponent(name) + ".json");
+    })
+    .then(applyScenario)
+    .catch((e) => console.warn("scenár sa nepodarilo načítať – používam predvolené texty", e));
+}
+
+loadJson("/emojis.json")
   .then((data) => { EMOJI_THEMES = data; })
   .catch((e) => console.warn("emojis.json sa nepodarilo načítať – používam predvolené emoji", e));
 
@@ -507,7 +585,6 @@ function pickBubble(m) {
   setText(bubble, pick(list));
 }
 
-let imgState = "";
 function frameImages(happy, sad, bounce) {
   const key = done ? "ano" : happy > 0.45 ? "priAno" : sad > 0.45 ? "priNie" : "neutralny";
   if (key !== imgState) {
